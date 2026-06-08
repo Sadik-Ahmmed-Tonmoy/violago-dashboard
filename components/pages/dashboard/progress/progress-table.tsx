@@ -60,8 +60,8 @@ export function ProgressTable({
         <h2 className="text-base font-semibold text-gray-900">Progress Viewer</h2>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* ===== Table view (visible on md and above) ===== */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-100">
@@ -153,7 +153,74 @@ export function ProgressTable({
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* ===== Card view (visible only on mobile, hidden on md+) ===== */}
+      <div className="md:hidden space-y-4 p-4">
+        {entries.map((entry) => {
+          const percent =
+            entry.total > 0
+              ? Math.round((entry.completed / entry.total) * 100)
+              : 1;
+
+          return (
+            <div key={entry.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="space-y-3">
+                {/* User row with avatar and status */}
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200">
+                      <Image
+                        src={entry.avatarUrl}
+                        alt={entry.userName}
+                        fill
+                        className="object-cover"
+                      />
+                    </div>
+                    <div>
+                      <p className="font-medium text-gray-900">{entry.userName}</p>
+                      <p className="text-xs text-gray-500">{entry.lessonName}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
+                      STATUS_STYLES[entry.status]
+                    }`}
+                  >
+                    {entry.status}
+                  </span>
+                </div>
+
+                {/* Progress bar */}
+                <div>
+                  <div className="flex justify-between text-xs text-gray-600 mb-1">
+                    <span>Progress</span>
+                    <span>{percent}%</span>
+                  </div>
+                  <ProgressBar percent={percent} />
+                </div>
+
+                {/* Additional info */}
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <p className="text-xs text-gray-500">Total Lessons</p>
+                    <p className="font-medium text-gray-800">
+                      {String(entry.completed).padStart(2, '0')}/{entry.total}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-500">Last Activity</p>
+                    <p className="font-medium text-gray-800">{entry.lastActivity}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {entries.length === 0 && (
+          <div className="text-center py-8 text-gray-500">No progress entries found.</div>
+        )}
+      </div>
+
+      {/* Pagination (unchanged) */}
       <div className="flex items-center justify-end gap-1.5 px-6 py-4 border-t border-gray-100">
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}

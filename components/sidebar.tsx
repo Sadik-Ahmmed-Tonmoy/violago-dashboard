@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { Menu, X, Users, FileText, BarChart3, Settings, LogOut, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -45,7 +46,10 @@ export function Sidebar() {
       {/* Mobile menu button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-white hover:bg-gray-100 shadow-md"
+        className={cn(
+          "fixed top-4 left-4 z-50 lg:hidden p-2 rounded-lg bg-white hover:bg-gray-100 shadow-md",
+          isOpen ? "hidden" : ""
+        )}
         aria-label="Toggle menu"
       >
         {isOpen ? <X size={24} /> : <Menu size={24} />}
@@ -65,6 +69,24 @@ export function Sidebar() {
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >
+
+        
+
+         <button
+        onClick={() => setIsOpen(!isOpen)}
+        className={cn(
+          "fixed top-4 right-4 z-50 lg:hidden p-2 rounded-lg bg-white hover:bg-gray-100 shadow-md",
+          isOpen ? "" : "hidden"
+        )}
+        aria-label="Toggle menu"
+      >
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+
+
+
+
         {/* Logo */}
         <div className="p-6 border-b border-gray-200">
           <div className="w-16 h-16 bg-black rounded-2xl flex items-center justify-center text-white text-2xl font-bold">

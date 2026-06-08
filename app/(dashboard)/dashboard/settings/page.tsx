@@ -21,7 +21,7 @@ export default function SettingsPage() {
           <SettingsTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
           {/* Right Content Panel */}
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-6 md:p-8">
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-6 md:p-8 w-full">
             {activeTab === 'basic' && <BasicSettingsPanel />}
             {activeTab === 'account' && <AccountSettingsPanel />}
           </div>

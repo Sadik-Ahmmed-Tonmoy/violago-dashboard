@@ -42,7 +42,7 @@ export function NourishTable({
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      {/* Table Header */}
+      {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <h2 className="text-lg font-semibold text-gray-900">Nourish</h2>
         <button
@@ -53,8 +53,8 @@ export function NourishTable({
         </button>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto">
+      {/* ===== Table view (visible on md and above) ===== */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
@@ -120,7 +120,49 @@ export function NourishTable({
         </table>
       </div>
 
-      {/* Pagination */}
+      {/* ===== Card view (visible only on mobile, hidden on md+) ===== */}
+      <div className="md:hidden space-y-4 p-4">
+        {items.map((item) => (
+          <div key={item.id} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+            <div className="space-y-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-xs text-gray-500">Heading</p>
+                  <p className="font-medium text-gray-900">{item.heading}</p>
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={() => onView(item)} className="p-1 text-yellow-600">
+                    <Eye size={18} />
+                  </button>
+                  <button onClick={() => onEdit(item)} className="p-1 text-blue-600">
+                    <Edit2 size={18} />
+                  </button>
+                  <button onClick={() => onDelete(item.id)} className="p-1 text-red-600">
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Title</p>
+                <p className="text-sm text-gray-900">{item.title}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Subtitle</p>
+                <p className="text-sm text-gray-900">{item.subtitle}</p>
+              </div>
+              <div>
+                <p className="text-xs text-gray-500">Description</p>
+                <p className="text-sm text-gray-700 line-clamp-2">{item.description}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+        {items.length === 0 && (
+          <div className="text-center py-8 text-gray-500">No nourish items found.</div>
+        )}
+      </div>
+
+      {/* Pagination (same for both layouts) */}
       <div className="flex items-center justify-end gap-1.5 px-6 py-4 border-t border-gray-200">
         <button
           onClick={() => onPageChange(Math.max(1, currentPage - 1))}

@@ -26,16 +26,16 @@ interface LessonTopic {
 }
 
 const INITIAL_LESSONS: Lesson[] = [
-  { id: '1', title: 'Aggression in Puberty', imageUrl: '/shepherd-1.png', description: 'Handling aggression.' },
-  { id: '2', title: "Don't Panic!", imageUrl: '/shepherd-2.png', description: 'Stay calm techniques.' },
-  { id: '3', title: 'Equipment for Your T...', imageUrl: '/shepherd-3.png', description: 'Essential equipment.' },
-  { id: '4', title: 'Family Interactions w...', imageUrl: '/shepherd-4.png', description: 'Family bonding.' },
+  { id: '1', title: 'Aggression in Puberty', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Handling aggression.' },
+  { id: '2', title: "Don't Panic!", imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Stay calm techniques.' },
+  { id: '3', title: 'Equipment for Your T...', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Essential equipment.' },
+  { id: '4', title: 'Family Interactions w...', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Family bonding.' },
 ];
 
 const INITIAL_TOPICS: LessonTopic[] = [
-  { id: 't1', name: 'Puberty', iconUrl: '/shepherd-1.png', lessons: INITIAL_LESSONS },
-  { id: 't2', name: 'Barking', iconUrl: '/shepherd-2.png', lessons: INITIAL_LESSONS },
-  { id: 't3', name: 'Being Alone', iconUrl: '/shepherd-3.png', lessons: [] },
+  { id: 't1', name: 'Puberty', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: INITIAL_LESSONS },
+  { id: 't2', name: 'Barking', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: INITIAL_LESSONS },
+  { id: 't3', name: 'Being Alone', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: [] },
 ];
 
 export default function LessonsPage() {

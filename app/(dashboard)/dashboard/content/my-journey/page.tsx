@@ -23,10 +23,10 @@ interface Part {
 }
 
 const INITIAL_LESSONS: Lesson[] = [
-  { id: '1', title: 'Create Training', imageUrl: '/shepherd-1.png', writerName: 'John Doe', description: 'Learn crate training basics.' },
-  { id: '2', title: 'Sleep Training', imageUrl: '/shepherd-2.png', writerName: 'Jane Smith', description: 'Establish good sleep habits.' },
-  { id: '3', title: 'Arriving Home', imageUrl: '/shepherd-3.png', writerName: 'Mike Brown', description: 'First day at home.' },
-  { id: '4', title: 'Toilet Training Intro', imageUrl: '/shepherd-4.png', writerName: 'Sarah Lee', description: 'Introduction to toilet training.' },
+  { id: '1', title: 'Create Training', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', writerName: 'John Doe', description: 'Learn crate training basics.' },
+  { id: '2', title: 'Sleep Training', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', writerName: 'Jane Smith', description: 'Establish good sleep habits.' },
+  { id: '3', title: 'Arriving Home', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', writerName: 'Mike Brown', description: 'First day at home.' },
+  { id: '4', title: 'Toilet Training Intro', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', writerName: 'Sarah Lee', description: 'Introduction to toilet training.' },
 ];
 
 const INITIAL_PARTS: Part[] = [
