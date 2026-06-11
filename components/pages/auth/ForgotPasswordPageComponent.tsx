@@ -6,6 +6,9 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useForgotPasswordMutation } from '@/redux/features/auth/authApi';
+import { handleAsyncWithToast } from '@/utils/handleAsyncWithToast';
 
 // Validation schema – only email is needed
 const forgotPasswordSchema = z.object({
@@ -18,8 +21,8 @@ const forgotPasswordSchema = z.object({
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordPageComponent() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const router = useRouter();
+  const [forgotPassword, { isLoading }] = useForgotPasswordMutation();
 
   const {
     register,
@@ -33,22 +36,22 @@ export default function ForgotPasswordPageComponent() {
   });
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true);
-    setIsSuccess(false);
-    try {
-      // Replace with your actual API call
-      console.log('Sending reset code to:', data.email);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Simulate success – you can show a message or redirect
-      setIsSuccess(true);
-      // Optionally clear form or redirect to verification page
-    } catch (error) {
+    const response = await handleAsyncWithToast(
+      () => forgotPassword({ email: data.email }).unwrap(),
+      'Sending reset code...',
+      undefined,
+      undefined,
+      true
+    );
+
+    if (response?.success) {
+      // Success: redirect to OTP verification page for password reset
+      router.push(`/auth/verify-code?email=${data.email}&purpose=PASSWORD_RESET`);
+    } else {
+      // If API returns error without throwing (should not happen with .unwrap, but as fallback)
       setError('root', {
-        message: 'Something went wrong. Please try again.',
+        message: response?.message || 'Failed to send reset code. Please try again.',
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -75,7 +78,7 @@ export default function ForgotPasswordPageComponent() {
                   Forgot password
                 </h1>
                 <p className="text-gray-600 text-sm sm:text-base">
-                  Enter your email address and we'll send you a code to reset your password.
+                  Enter your email address and we&apos;ll send you a code to reset your password.
                 </p>
               </div>
 
@@ -103,15 +106,6 @@ export default function ForgotPasswordPageComponent() {
                   </p>
                 )}
               </div>
-
-              {/* Success Message */}
-              {isSuccess && (
-                <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-                  <p className="text-sm text-green-700 text-center">
-                    ✓ Reset code sent! Check your email inbox.
-                  </p>
-                </div>
-              )}
 
               {/* Global Error Message */}
               {errors.root && (

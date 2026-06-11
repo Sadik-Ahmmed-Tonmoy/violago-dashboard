@@ -5,29 +5,29 @@ const authApi = baseApi.injectEndpoints({
     login: builder.mutation({
       query: (userInfo) => {
         return {
-          url: "login",
+          url: "/auth/login",
           method: "POST",
           body: userInfo,
         };
       },
       invalidatesTags: ["user"],
     }),
-    loginWithGoogle: builder.mutation({
-      query: (userInfo) => {
-        console.log({ userInfo });
-        return {
-          url: "google-login",
-          method: "POST",
-          body: userInfo,
-        };
-      },
-      invalidatesTags: ["user"],
-    }),
+    // loginWithGoogle: builder.mutation({
+    //   query: (userInfo) => {
+    //     console.log({ userInfo });
+    //     return {
+    //       url: "google-login",
+    //       method: "POST",
+    //       body: userInfo,
+    //     };
+    //   },
+    //   invalidatesTags: ["user"],
+    // }),
     forgotPassword: builder.mutation({
       query: (userInfo) => {
         console.log({ userInfo });
         return {
-          url: "forgot-password",
+          url: "/auth/forget-password",
           method: "POST",
           body: userInfo,
         };
@@ -38,36 +38,36 @@ const authApi = baseApi.injectEndpoints({
       query: (userInfo) => {
         console.log({ userInfo });
         return {
-          url: "reset-password",
+          url: "/auth/reset-password",
           method: "POST",
           body: userInfo,
         };
       },
       invalidatesTags: ["user"],
     }),
-    updateUser: builder.mutation({
-      query: (userInfo) => {
-        return {
-          url: "user/me",
-          method: "PATCH",
-          body: userInfo,
-        };
-      },
-      invalidatesTags: ["user"],
-    }),
-    register: builder.mutation({
-      query: (userInfo) => {
-        return {
-          url: "register",
-          method: "POST",
-          body: userInfo,
-        };
-      },
-    }),
+    // updateUser: builder.mutation({
+    //   query: (userInfo) => {
+    //     return {
+    //       url: "user/me",
+    //       method: "PATCH",
+    //       body: userInfo,
+    //     };
+    //   },
+    //   invalidatesTags: ["user"],
+    // }),
+    // register: builder.mutation({
+    //   query: (userInfo) => {
+    //     return {
+    //       url: "register",
+    //       method: "POST",
+    //       body: userInfo,
+    //     };
+    //   },
+    // }),
     otp: builder.mutation({
       query: (userInfo) => {
         return {
-          url: "users/verify-otp",
+          url: "/auth/verify-otp",
           method: "POST",
           body: userInfo,
         };
@@ -80,16 +80,24 @@ const authApi = baseApi.injectEndpoints({
       }),
       providesTags: ["user"],
     }),
+    // /auth/resend-otp
+    resendOtp: builder.mutation({
+      query: (userInfo) => {
+        return {
+          url: "/auth/resend-otp",
+          method: "POST",
+          body: userInfo,
+        };
+      },
+    }),
   }),
 });
 
 export const {
   useLoginMutation,
-  useLoginWithGoogleMutation,
   useForgotPasswordMutation,
   useResetPasswordMutation,
-  useRegisterMutation,
-  useUpdateUserMutation,
   useOtpMutation,
   useGetMeQuery,
+  useResendOtpMutation,
 } = authApi;

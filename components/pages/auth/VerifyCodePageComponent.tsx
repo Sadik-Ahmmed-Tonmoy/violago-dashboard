@@ -1,11 +1,17 @@
 'use client';
 
 import { LoginBranding } from '@/components/login-branding';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useOtpMutation, useResendOtpMutation,  } from '@/redux/features/auth/authApi';
+import { useDispatch } from 'react-redux';
+import { setUser } from '@/redux/features/auth/authSlice';
+import { handleAsyncWithToast } from '@/utils/handleAsyncWithToast';
+import { jwtDecode } from 'jwt-decode';
 
 // Validation schema – accepts 5 or 6 digit code
 const verifyCodeSchema = z.object({
@@ -18,47 +24,95 @@ const verifyCodeSchema = z.object({
 
 type VerifyCodeFormData = z.infer<typeof verifyCodeSchema>;
 
+interface DecodedToken {
+  id: string;
+  email: string;
+  role: string;
+}
+
 export default function VerifyCodePageComponent() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const dispatch = useDispatch();
+
+  const email = searchParams.get('email') || '';
+  const purpose = searchParams.get('purpose') || 'EMAIL_VERIFICATION'; // or PASSWORD_RESET
+
+  const [verifyOtp, { isLoading }] = useOtpMutation();
+  const [resendOtp, { isLoading: isResending }] = useResendOtpMutation();
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-    setError: setFormError,
+    setError,
   } = useForm<VerifyCodeFormData>({
     resolver: zodResolver(verifyCodeSchema),
     defaultValues: { code: '' },
     mode: 'onBlur',
   });
 
+  // If no email in URL, redirect to forgot password or login
+  useEffect(() => {
+    if (!email) {
+      router.push('/auth/login');
+    }
+  }, [email, router]);
+
   const onSubmit = async (data: VerifyCodeFormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Replace with your actual API call
-      console.log('Verifying code:', data.code);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      
-      // Simulate success – redirect to reset password page
-      // router.push('/reset-password');
-      
-      // For demo, show success alert
-      alert('Code verified! Proceed to reset password.');
-    } catch (err) {
-      setError('Invalid or expired code. Please try again.');
-      setFormError('root', { message: 'Invalid or expired code' });
-    } finally {
-      setIsLoading(false);
+    const response = await handleAsyncWithToast(
+      () => verifyOtp({ email, code: data.code, purpose }).unwrap(),
+      'Verifying code...',
+      undefined,
+      undefined,
+      true
+    );
+
+    if (response?.success && response?.data) {
+      const { isVerified, accessToken, refreshToken, resetPasswordToken } = response.data;
+
+      if (purpose === 'EMAIL_VERIFICATION') {
+        // Email verification (login/register flow)
+        if (isVerified && accessToken) {
+          const decoded: DecodedToken = jwtDecode(accessToken);
+          dispatch(
+            setUser({
+              user: {
+                id: decoded.id,
+                email: decoded.email,
+                role: decoded.role,
+                isVerified: true,
+              },
+              access_token: accessToken,
+              refresh_token: refreshToken,
+            })
+          );
+          // Redirect to dashboard after successful verification
+          router.push('/dashboard/users');
+        } else {
+          setError('root', { message: 'Verification failed. Please try again.' });
+        }
+      } else if (purpose === 'PASSWORD_RESET') {
+        // Password reset flow – redirect to reset password page with token
+        if (resetPasswordToken) {
+          router.push(`/auth/reset-password?email=${encodeURIComponent(email)}&token=${resetPasswordToken}`);
+        } else {
+          setError('root', { message: 'Invalid reset token. Please try again.' });
+        }
+      }
+    } else {
+      setError('root', { message: response?.message || 'Invalid or expired code.' });
     }
   };
 
   const handleResendCode = async () => {
-    // Implement resend logic – call your API again with the email (stored in session/localStorage)
-    console.log('Resending code...');
-    // Show temporary success message
-    alert('A new code has been sent to your email.');
+    await handleAsyncWithToast(
+      () => resendOtp({ email, purpose }).unwrap(),
+      'Resending code...',
+      'A new code has been sent to your email.',
+      undefined,
+      true
+    );
   };
 
   return (
@@ -84,8 +138,8 @@ export default function VerifyCodePageComponent() {
                   Check your Email
                 </h1>
                 <p className="text-gray-600 text-sm sm:text-base">
-                  We&apos;ve sent a 5‑digit verification code to your email address.
-                  Enter it below to reset your password.
+                  We&apos;ve sent a 5‑digit verification code to <strong>{email}</strong>.
+                  Enter it below to {purpose === 'PASSWORD_RESET' ? 'reset your password' : 'verify your account'}.
                 </p>
               </div>
 
@@ -116,9 +170,9 @@ export default function VerifyCodePageComponent() {
               </div>
 
               {/* General Error Message */}
-              {error && (
+              {errors.root && (
                 <div className="p-3 rounded-lg bg-red-50 border border-red-200">
-                  <p className="text-sm text-red-600 text-center">{error}</p>
+                  <p className="text-sm text-red-600 text-center">{errors.root.message}</p>
                 </div>
               )}
 
@@ -162,10 +216,10 @@ export default function VerifyCodePageComponent() {
                 <button
                   type="button"
                   onClick={handleResendCode}
-                  disabled={isLoading}
+                  disabled={isResending}
                   className="text-sm font-medium text-gray-600 hover:text-gray-900 transition-colors focus:outline-none focus:underline"
                 >
-                  Didn&apos;t receive a code? Resend
+                  {isResending ? 'Sending...' : "Didn't receive a code? Resend"}
                 </button>
                 <Link
                   href="/auth/login"

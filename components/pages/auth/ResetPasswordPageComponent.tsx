@@ -2,11 +2,13 @@
 
 import { LoginBranding } from '@/components/login-branding';
 import { Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useResetPasswordMutation } from '@/redux/features/auth/authApi';
+import { handleAsyncWithToast } from '@/utils/handleAsyncWithToast';
 
 // Password validation schema
 const resetPasswordSchema = z
@@ -29,9 +31,13 @@ type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 
 export default function ResetPasswordPageComponent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const email = searchParams.get('email') || '';
+  const token = searchParams.get('token') || '';
+
+  const [resetPassword, { isLoading }] = useResetPasswordMutation();
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const {
@@ -48,22 +54,30 @@ export default function ResetPasswordPageComponent() {
     mode: 'onBlur',
   });
 
-  const onSubmit = async (data: ResetPasswordFormData) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      // Replace with your actual API call
-      // Include the reset token (from URL) and the new password
-      console.log('Resetting password:', data.newPassword);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  // Redirect if missing required params
+  useEffect(() => {
+    if (!email || !token) {
+      router.push('/auth/login');
+    }
+  }, [email, token, router]);
 
-      // Simulate success – redirect to login page
-      router.push('/login?reset=success');
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
-      setFormError('root', { message: 'Failed to reset password' });
-    } finally {
-      setIsLoading(false);
+  const onSubmit = async (data: ResetPasswordFormData) => {
+    setError(null);
+
+    const response = await handleAsyncWithToast(
+      () => resetPassword({ email, token, password: data.newPassword }).unwrap(),
+      'Resetting password...',
+      'Password reset successful!',
+      undefined,
+      true
+    );
+
+    if (response?.success) {
+      // Redirect to login page after success
+      router.push('/auth/login?reset=success');
+    } else {
+      setError(response?.message || 'Failed to reset password. Please try again.');
+      setFormError('root', { message: response?.message || 'Failed to reset password' });
     }
   };
 
@@ -92,6 +106,11 @@ export default function ResetPasswordPageComponent() {
                 <p className="text-gray-600 text-sm sm:text-base">
                   Create a strong password for your account.
                 </p>
+                {email && (
+                  <p className="text-xs text-gray-500">
+                    Resetting password for: <span className="font-medium">{email}</span>
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">
@@ -175,9 +194,6 @@ export default function ResetPasswordPageComponent() {
                   )}
                 </div>
               </div>
-
-              {/* Password strength indicator (optional but recommended) */}
-              {/* You can add a component here that visualises password strength */}
 
               {/* General Error Message */}
               {error && (

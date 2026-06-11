@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @next/next/no-img-element */
 'use client';
 
-import { Modal, Form, Input } from 'antd';
+import { Modal, Form, Input, message } from 'antd';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -13,54 +14,59 @@ const lessonSchema = z.object({
   description: z.string().optional(),
 });
 
-export type LessonV2FormData = {
-  title: string;
-  description?: string;
-  thumbnailUrl?: string;
-};
-
 interface CreateLessonModalV2Props {
   open: boolean;
   title?: string;
+  categoryId?: string;
   onClose: () => void;
-  onSubmit: (data: LessonV2FormData) => void;
+  onSubmit: (formData: FormData) => void;
 }
 
 export function CreateLessonModalV2({
   open,
-  title = 'Create New Lessons',
+  title = 'Create New Lesson',
+  categoryId,
   onClose,
   onSubmit,
 }: CreateLessonModalV2Props) {
-  const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string>('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const {
-    control,
-    handleSubmit,
-    reset,
-    formState: { errors },
-  } = useForm({
+  const { control, handleSubmit, reset, formState: { errors } } = useForm({
     resolver: zodResolver(lessonSchema),
     defaultValues: { title: '', description: '' },
   });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && file.type.startsWith('image/')) {
-      setThumbnailUrl(URL.createObjectURL(file));
+    if (file) {
+      if (!file.type.startsWith('image/')) {
+        message.error('Only image files');
+        return;
+      }
+      setThumbnailFile(file);
+      setPreview(URL.createObjectURL(file));
     }
   };
 
   const handleFormSubmit = (data: any) => {
-    onSubmit({ title: data.title, description: data.description, thumbnailUrl });
+    const formData = new FormData();
+    formData.append('title', data.title);
+    if (data.description) formData.append('description', data.description);
+    if (categoryId) formData.append('categoryId', categoryId);
+    if (thumbnailFile) formData.append('thumbnail', thumbnailFile);
+    onSubmit(formData);
     reset();
-    setThumbnailUrl('');
+    setThumbnailFile(null);
+    setPreview('');
+    onClose();
   };
 
   const handleClose = () => {
     reset();
-    setThumbnailUrl('');
+    setThumbnailFile(null);
+    setPreview('');
     onClose();
   };
 
@@ -74,77 +80,48 @@ export function CreateLessonModalV2({
       destroyOnClose
     >
       <Form layout="vertical" onFinish={handleSubmit(handleFormSubmit)} className="mt-4">
-        {/* Upload Thumbnail */}
-        <Form.Item label="Upload Thumbnail">
+        <Form.Item label="Thumbnail">
           <div
             onClick={() => fileInputRef.current?.click()}
             className="w-full h-36 border border-gray-300 rounded-lg flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-gray-50 transition overflow-hidden"
           >
-            {thumbnailUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={thumbnailUrl} alt="thumbnail" className="w-full h-full object-cover" />
+            {preview ? (
+              <img src={preview} alt="preview" className="w-full h-full object-cover" />
             ) : (
               <>
                 <Upload size={28} className="text-gray-400" />
-                <span className="text-sm text-gray-400">Upload Thumbnail</span>
+                <span className="text-sm text-gray-400">Click to upload</span>
               </>
             )}
           </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
+          <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
         </Form.Item>
 
-        {/* Title */}
         <Controller
           name="title"
           control={control}
           render={({ field }) => (
-            <Form.Item
-              label="Title"
-              validateStatus={errors.title ? 'error' : ''}
-              help={errors.title?.message}
-            >
-              <Input {...field} placeholder="Title" className="rounded-lg" />
+            <Form.Item label="Title" validateStatus={errors.title ? 'error' : ''} help={errors.title?.message}>
+              <Input {...field} placeholder="Lesson title" className="rounded-lg" />
             </Form.Item>
           )}
         />
 
-        {/* Description — shown only when it's a topic-specific modal */}
-        {title !== 'Create New Lessons' && (
-          <Controller
-            name="description"
-            control={control}
-            render={({ field }) => (
-              <Form.Item label="Description">
-                <Input.TextArea
-                  {...field}
-                  rows={4}
-                  placeholder="Description"
-                  className="rounded-lg"
-                />
-              </Form.Item>
-            )}
-          />
-        )}
+        <Controller
+          name="description"
+          control={control}
+          render={({ field }) => (
+            <Form.Item label="Description">
+              <Input.TextArea {...field} rows={4} placeholder="Description" className="rounded-lg" />
+            </Form.Item>
+          )}
+        />
 
-        {/* Footer */}
         <Form.Item className="flex justify-end gap-3 mb-0 mt-4">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="px-6 py-2.5 me-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium"
-          >
-            Close
+          <button type="button" onClick={handleClose} className="px-6 py-2.5 border rounded-lg me-3">
+            Cancel
           </button>
-          <button
-            type="submit"
-            className="px-6 py-2.5 bg-black text-white rounded-lg hover:bg-gray-800 font-medium"
-          >
+          <button type="submit" className="px-6 py-2.5 bg-black text-white rounded-lg">
             Submit
           </button>
         </Form.Item>

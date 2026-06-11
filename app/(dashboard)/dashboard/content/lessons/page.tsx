@@ -1,125 +1,181 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useState } from 'react';
 import { Header } from '@/components/header';
-import { CreateLessonModalV2, LessonV2FormData } from '@/components/pages/dashboard/lessons/create-lesson-modal-v2';
-import { EditLessonModalV2, EditLessonV2FormData } from '@/components/pages/dashboard/lessons/edit-lesson-modal-v2';
 import { LessonSection } from '@/components/pages/dashboard/lessons/lesson-section';
-// import { LessonSection } from '@/components/lesson-section';
-// import { CreateLessonModalV2 } from '@/components/create-lesson-modal-v2';
-// import { EditLessonModalV2 } from '@/components/edit-lesson-modal-v2';
-// import type { LessonV2FormData } from '@/components/create-lesson-modal-v2';
-// import type { EditLessonV2FormData } from '@/components/edit-lesson-modal-v2';
-
-interface Lesson {
-  id: string;
-  title: string;
-  imageUrl: string;
-  description?: string;
-}
-
-interface LessonTopic {
-  id: string;
-  name: string;
-  iconUrl: string;
-  lessons: Lesson[];
-}
-
-const INITIAL_LESSONS: Lesson[] = [
-  { id: '1', title: 'Aggression in Puberty', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Handling aggression.' },
-  { id: '2', title: "Don't Panic!", imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Stay calm techniques.' },
-  { id: '3', title: 'Equipment for Your T...', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Essential equipment.' },
-  { id: '4', title: 'Family Interactions w...', imageUrl: 'https://cdn.britannica.com/79/232779-050-6B0411D7/German-Shepherd-dog-Alsatian.jpg', description: 'Family bonding.' },
-];
-
-const INITIAL_TOPICS: LessonTopic[] = [
-  { id: 't1', name: 'Puberty', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: INITIAL_LESSONS },
-  { id: 't2', name: 'Barking', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: INITIAL_LESSONS },
-  { id: 't3', name: 'Being Alone', iconUrl: 'https://thumbs.dreamstime.com/b/german-shepherd-dog-logo-clear-lines-emblem-symbol-sign-mascot-portrait-illustration-design-print-white-background-318118097.jpg', lessons: [] },
-];
+import { CreateLessonModalV2 } from '@/components/pages/dashboard/lessons/create-lesson-modal-v2';
+import { EditLessonModalV2 } from '@/components/pages/dashboard/lessons/edit-lesson-modal-v2';
+import { CreateCategoryModal } from '@/components/pages/dashboard/lessons/create-category-modal';
+import { EditCategoryModal } from '@/components/pages/dashboard/lessons/edit-category-modal';
+import {
+  useGetAllCategoriesQuery,
+  useCreateCategoryMutation,
+  useUpdateCategoryMutation,
+  useDeleteCategoryMutation,
+  useCreateLessonMutation,
+  useUpdateLessonMutation,
+  useDeleteLessonMutation,
+} from '@/redux/features/lessonApi';
+import { message, Spin } from 'antd';
+import { Plus } from 'lucide-react';
+import Swal from 'sweetalert2';
 
 export default function LessonsPage() {
-  const [topics, setTopics] = useState<LessonTopic[]>(INITIAL_TOPICS);
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [selectedTopicId, setSelectedTopicId] = useState<string>('');
-  const [createModalTitle, setCreateModalTitle] = useState('');
+  const { data: categories, isLoading, isFetching, refetch } = useGetAllCategoriesQuery();
+  const [createCategory, { isLoading: isCreatingCategory }] = useCreateCategoryMutation();
+  const [updateCategory, { isLoading: isUpdatingCategory }] = useUpdateCategoryMutation();
+  const [deleteCategory, { isLoading: isDeletingCategory }] = useDeleteCategoryMutation();
+  const [createLesson, { isLoading: isCreatingLesson }] = useCreateLessonMutation();
+  const [updateLesson, { isLoading: isUpdatingLesson }] = useUpdateLessonMutation();
+  const [deleteLesson, { isLoading: isDeletingLesson }] = useDeleteLessonMutation();
 
-  const handleDeleteTopic = (topicId: string) => {
-    setTopics((prev) => prev.filter((t) => t.id !== topicId));
+  // Modal states
+  const [isCreateCategoryOpen, setIsCreateCategoryOpen] = useState(false);
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<{ id: string; name: string; iconUrl?: string } | null>(null);
+  const [isCreateLessonOpen, setIsCreateLessonOpen] = useState(false);
+  const [isEditLessonOpen, setIsEditLessonOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [createLessonTitle, setCreateLessonTitle] = useState('');
+
+  // Track loading for individual category delete
+  const [deletingCategoryId, setDeletingCategoryId] = useState<string | null>(null);
+  const [deletingLessonId, setDeletingLessonId] = useState<string | null>(null);
+
+  const isAnyMutationLoading =
+    isCreatingCategory ||
+    isUpdatingCategory ||
+    isDeletingCategory ||
+    isCreatingLesson ||
+    isUpdatingLesson ||
+    isDeletingLesson;
+
+  // Category handlers
+  const handleCreateCategory = async (formData: FormData) => {
+    try {
+      await createCategory(formData).unwrap();
+      message.success('Category created');
+      setIsCreateCategoryOpen(false);
+    } catch (err: any) {
+      message.error(err?.data?.message || 'Failed to create category');
+    }
   };
 
-  const handleDeleteLesson = (topicId: string, lessonId: string) => {
-    setTopics((prev) =>
-      prev.map((topic) =>
-        topic.id === topicId
-          ? { ...topic, lessons: topic.lessons.filter((l) => l.id !== lessonId) }
-          : topic
-      )
-    );
+  const handleUpdateCategory = async (id: string, formData: FormData) => {
+    try {
+      await updateCategory({ id, formData }).unwrap();
+      message.success('Category updated');
+      setIsEditCategoryOpen(false);
+      setSelectedCategory(null);
+    } catch (err: any) {
+      message.error(err?.data?.message || 'Failed to update category');
+    }
   };
 
-  const handleAddLesson = (topicId: string, topicName: string) => {
-    setSelectedTopicId(topicId);
-    setCreateModalTitle(`Create New ${topicName}`);
-    setIsCreateModalOpen(true);
+  const handleDeleteCategory = async (id: string) => {
+    const result = await Swal.fire({
+      title: 'Delete Category?',
+      html: `Are you sure you want to delete "<strong>${selectedCategory?.name || 'this category'}</strong>"?<br/>All lessons inside will also be permanently deleted.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+      reverseButtons: true,
+    });
+
+    if (result.isConfirmed) {
+      setDeletingCategoryId(id);
+      try {
+        await deleteCategory(id).unwrap();
+        message.success('Category deleted');
+        Swal.fire('Deleted!', 'Category has been removed.', 'success');
+        refetch();
+      } catch (err: any) {
+        message.error(err?.data?.message || 'Failed to delete category');
+        Swal.fire('Error!', err?.data?.message || 'Could not delete category.', 'error');
+      } finally {
+        setDeletingCategoryId(null);
+      }
+    }
   };
 
-  const handleCreateLesson = (formData: LessonV2FormData) => {
-    const newLesson: Lesson = {
-      id: `l${Date.now()}`,
-      title: formData.title,
-      imageUrl: formData.thumbnailUrl || '/shepherd-1.png',
-      description: formData.description,
-    };
-    setTopics((prev) =>
-      prev.map((topic) =>
-        topic.id === selectedTopicId
-          ? { ...topic, lessons: [...topic.lessons, newLesson] }
-          : topic
-      )
-    );
-    setIsCreateModalOpen(false);
-    setSelectedTopicId('');
+  // Lesson handlers
+  const handleAddLesson = (categoryId: string, categoryName: string) => {
+    setSelectedCategoryId(categoryId);
+    setCreateLessonTitle(`Create New Lesson in ${categoryName}`);
+    setIsCreateLessonOpen(true);
   };
 
-  const handleEditLesson = (topicId: string, lesson: Lesson) => {
-    setSelectedTopicId(topicId);
+  const handleCreateLesson = async (formData: FormData) => {
+    try {
+      await createLesson(formData).unwrap();
+      message.success('Lesson created');
+      setIsCreateLessonOpen(false);
+    } catch (err: any) {
+      message.error(err?.data?.message || 'Failed to create lesson');
+    }
+  };
+
+  const handleEditLesson = (lesson: any) => {
     setSelectedLesson(lesson);
-    setIsEditModalOpen(true);
+    setIsEditLessonOpen(true);
   };
 
-  const handleUpdateLesson = (formData: EditLessonV2FormData) => {
-    setTopics((prev) =>
-      prev.map((topic) =>
-        topic.id === selectedTopicId
-          ? {
-              ...topic,
-              lessons: topic.lessons.map((l) =>
-                l.id === selectedLesson?.id
-                  ? {
-                      ...l,
-                      title: formData.title,
-                      description: formData.description,
-                      imageUrl: formData.thumbnailUrl || l.imageUrl,
-                    }
-                  : l
-              ),
-            }
-          : topic
-      )
+  const handleUpdateLesson = async (formData: FormData) => {
+    if (!selectedLesson) return;
+    try {
+      await updateLesson({ id: selectedLesson.id, formData }).unwrap();
+      message.success('Lesson updated');
+      setIsEditLessonOpen(false);
+      setSelectedLesson(null);
+    } catch (err: any) {
+      message.error(err?.data?.message || 'Failed to update lesson');
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    const result = await Swal.fire({
+      title: 'Delete Lesson?',
+      text: "This lesson will be permanently removed.",
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel',
+    });
+
+    if (result.isConfirmed) {
+      setDeletingLessonId(lessonId);
+      try {
+        await deleteLesson(lessonId).unwrap();
+        message.success('Lesson deleted');
+        Swal.fire('Deleted!', 'Lesson has been removed.', 'success');
+        refetch();
+      } catch (err: any) {
+        message.error(err?.data?.message || 'Failed to delete lesson');
+        Swal.fire('Error!', err?.data?.message || 'Could not delete lesson.', 'error');
+      } finally {
+        setDeletingLessonId(null);
+      }
+    }
+  };
+
+  // Show global loading while fetching or refetching
+  if (isLoading || isFetching) {
+    return (
+      <main className="flex-1 lg:ml-0">
+        <Header title="Content Management" />
+        <div className="flex justify-center items-center py-20">
+          <Spin size="large" />
+        </div>
+      </main>
     );
-    setIsEditModalOpen(false);
-    setSelectedLesson(null);
-    setSelectedTopicId('');
-  };
-
-  const handleCreateNewLesson = () => {
-    setCreateModalTitle('Create New Lessons');
-    setSelectedTopicId('');
-    setIsCreateModalOpen(true);
-  };
+  }
 
   return (
     <main className="flex-1 lg:ml-0">
@@ -127,41 +183,80 @@ export default function LessonsPage() {
       <div className="p-4 sm:p-6 lg:p-8 mx-auto">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <h2 className="text-2xl font-bold text-gray-900">Lessons</h2>
-          <button
-            onClick={handleCreateNewLesson}
-            className="w-full sm:w-auto px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-900 transition font-medium"
-          >
-            Create New lesson
-          </button>
+          <div className="flex gap-3">
+            <button
+              onClick={() => setIsCreateCategoryOpen(true)}
+              disabled={isAnyMutationLoading}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-medium flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Plus size={18} />
+              {isCreatingCategory ? 'Creating...' : 'Add New Category'}
+            </button>
+          </div>
         </div>
 
         <div className="space-y-10">
-          {topics.map((topic) => (
+          {categories?.map((category) => (
             <LessonSection
-              key={topic.id}
-              topicId={topic.id}
-              topicName={topic.name}
-              topicIconUrl={topic.iconUrl}
-              lessons={topic.lessons}
-              onDeleteTopic={() => handleDeleteTopic(topic.id)}
-              onEditLesson={(lesson) => handleEditLesson(topic.id, lesson)}
-              onCreateLesson={() => handleAddLesson(topic.id, topic.name)}
-              onDeleteLesson={(lessonId) => handleDeleteLesson(topic.id, lessonId)}
+              key={category.id}
+              topicId={category.id}
+              topicName={category.name}
+              topicIconUrl={category.iconUrl || ''}
+              lessons={category.lessons?.map(l => ({ 
+                id: l.id, 
+                title: l.title,
+                description: l.description, 
+                imageUrl: l.thumbnail || '' 
+              })) || []}
+              onDeleteTopic={() => handleDeleteCategory(category.id)}
+              isDeletingTopic={deletingCategoryId === category.id}
+              onEditTopic={() => {
+                setSelectedCategory({ id: category.id, name: category.name, iconUrl: category.iconUrl });
+                setIsEditCategoryOpen(true);
+              }}
+              isEditingTopic={isUpdatingCategory && selectedCategory?.id === category.id}
+              onEditLesson={(lesson) => handleEditLesson(lesson)}
+              onCreateLesson={() => handleAddLesson(category.id, category.name)}
+              onDeleteLesson={(lessonId) => handleDeleteLesson(lessonId)}
+              isDeletingLesson={deletingLessonId}
+              isAnyActionLoading={isAnyMutationLoading}
             />
           ))}
         </div>
       </div>
 
+      {/* Modals */}
+      <CreateCategoryModal
+        open={isCreateCategoryOpen}
+        onClose={() => setIsCreateCategoryOpen(false)}
+        onSubmit={handleCreateCategory}
+      />
+
+      <EditCategoryModal
+        open={isEditCategoryOpen}
+        category={selectedCategory}
+        onClose={() => {
+          setIsEditCategoryOpen(false);
+          setSelectedCategory(null);
+        }}
+        onSubmit={(formData) => handleUpdateCategory(selectedCategory!.id, formData)}
+      />
+
       <CreateLessonModalV2
-        open={isCreateModalOpen}
-        title={createModalTitle}
-        onClose={() => setIsCreateModalOpen(false)}
+        open={isCreateLessonOpen}
+        title={createLessonTitle}
+        categoryId={selectedCategoryId}
+        onClose={() => setIsCreateLessonOpen(false)}
         onSubmit={handleCreateLesson}
       />
+
       <EditLessonModalV2
-        open={isEditModalOpen}
-        lesson={selectedLesson || undefined}
-        onClose={() => setIsEditModalOpen(false)}
+        open={isEditLessonOpen}
+        lesson={selectedLesson}
+        onClose={() => {
+          setIsEditLessonOpen(false);
+          setSelectedLesson(null);
+        }}
         onSubmit={handleUpdateLesson}
       />
     </main>
