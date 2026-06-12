@@ -1,14 +1,7 @@
-import {
-  createApi,
-  fetchBaseQuery,
-  BaseQueryFn,
-  FetchArgs,
-  FetchBaseQueryError,
-} from "@reduxjs/toolkit/query/react";
-import { RootState } from "../store";
-import { logout, setUser } from "../features/auth/authSlice";
-import Swal from "sweetalert2";
+import { BaseQueryFn, createApi, FetchArgs, fetchBaseQuery, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
 import { signOut } from "next-auth/react";
+import { logout, setUser } from "../features/auth/authSlice";
+import { RootState } from "../store";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
@@ -23,11 +16,7 @@ const baseQuery = fetchBaseQuery({
   },
 });
 
-const baseQueryWithRefreshToken: BaseQueryFn<
-  string | FetchArgs,
-  unknown,
-  FetchBaseQueryError
-> = async (args, api, extraOptions) => {
+const baseQueryWithRefreshToken: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
 
   if (result.error?.status === 401) {
@@ -45,24 +34,19 @@ const baseQueryWithRefreshToken: BaseQueryFn<
       // }
 
       // Make a request to refresh the token
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_BASE_URL}/refresh-token`,
-        {
-          method: "POST",
-          // credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-            authorization: `Bearer ${refreshToken}`,
-          },
-        }
-      );
+      const res = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/refresh-token`, {
+        method: "POST",
+        // credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          authorization: `Bearer ${refreshToken}`,
+        },
+      });
 
       const data = await res.json();
       if (data?.success) {
         const user = (api.getState() as RootState).auth.user;
-        api.dispatch(
-          setUser({ user, token: data.data.token, refresh_token: refreshToken })
-        );
+        api.dispatch(setUser({ user, token: data.data.token, refresh_token: refreshToken }));
 
         // Retry the original query with the new token
         result = await baseQuery(args, api, extraOptions);
@@ -88,8 +72,7 @@ const baseQueryWithRefreshToken: BaseQueryFn<
     } catch (error) {
       console.error("Error during token refresh:", error);
     }
-  }
-  else if (result.error?.status === 403) {
+  } else if (result.error?.status === 403) {
     api.dispatch(logout());
     signOut();
   }
@@ -100,8 +83,6 @@ const baseQueryWithRefreshToken: BaseQueryFn<
 export const baseApi = createApi({
   reducerPath: "baseApi",
   baseQuery: baseQueryWithRefreshToken,
-  tagTypes: [
-    "user", "example", "Category", "Lesson", "JourneyPart", "JourneyLesson", "Progress"
-  ],
+  tagTypes: ["user", "example", "Category", "Lesson", "JourneyPart", "JourneyLesson", "Progress"],
   endpoints: () => ({}),
 });

@@ -1,9 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import Swal from "sweetalert2";
-import { Dispatch } from "redux";
 import { logout } from "@/redux/features/auth/authSlice";
+import { useAppDispatch } from "@/redux/hooks";
+import { useRouter } from "next/navigation";
 
-export const logoutHandler = async (dispatch: Dispatch, router: any) => {
+export const logoutHandler = async ( dispatch: any, router: any ) => {
+
   try {
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -22,7 +24,7 @@ export const logoutHandler = async (dispatch: Dispatch, router: any) => {
         timer: 1500,
         showConfirmButton: false,
       });
-      await router.push("/");
+      await router.push("/auth/login");
     }
   } catch (error) {
     Swal.fire({
