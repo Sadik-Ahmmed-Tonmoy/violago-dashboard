@@ -2,7 +2,8 @@
 
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { ProgressEntry } from '@/app/(dashboard)/dashboard/progress/page';
+import { ProgressEntry } from '@/redux/features/progressApi';
+// import { ProgressEntry } from '@/app/(dashboard)/dashboard/progress/page';
 
 interface ProgressTableProps {
   entries: ProgressEntry[];

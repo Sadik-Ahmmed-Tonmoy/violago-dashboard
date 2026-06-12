@@ -12,7 +12,7 @@ import { signOut } from "next-auth/react";
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_BASE_URL,
-  credentials: "include",
+  // credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const access_token = (getState() as RootState).auth.access_token;
     headers.set("accept", "application/json");
